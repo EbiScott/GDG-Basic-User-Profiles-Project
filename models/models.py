@@ -11,5 +11,5 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     ## I need to find out how to record emails ---> that's part of the focus points
-    email = Column(nullable=False)
+    email = Column(String, nullable=False, unique=True)
     bio = Column(String)
