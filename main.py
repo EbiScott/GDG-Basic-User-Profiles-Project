@@ -1,11 +1,10 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from uuid import UUID, uuid4
 
 
-from models import User
-from shemas import User as UserSchema
+from models.models import User
+from models.schemas import User as UserSchema
 from database import SessionLocal
 
 app = FastAPI()
@@ -20,19 +19,23 @@ def get_db():
 ## Zero route to return our README.md 
 @app.get('/')
 async def root():
-    return "Hello World!!"
+    return {'message': "Hello World!"}
+    #Try to figure out a way to return READMe.md or docs here
 
 # First route to create new users
 @app.post("/users/", response_model=UserSchema)
-async def create_user(users: UserSchema):
-    user.id = uuid4()
-    users.append(user)
-    return user
+async def create_user(user: UserSchema, db: Session = Depends(get_db)):
+    new_user = User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
 
 
 ##Second route to get all the users
-@app.get("/users/", response_model=list[User])
-async def get_users():
+@app.get("/users/", response_model=list[UserSchema])
+async def get_users(db: Session = Depends(get_db)):
+    users = db.execute(select(User)).scalars().all()
     return users
 
 
@@ -43,20 +46,29 @@ async def get_users():
 #     name: so so and so name
 #     bio: so so and so bio
 # }
-@app.get("/users/{user_id}", response_model=User)
-async def get_user(query):
-    if query in users:
-        return query
-    else:
-        return HTTPException()
+@app.get("/users/{user_id}", response_model=UserSchema)
+async def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 ## Fourth route to update a specific user
-@app.put("/users/{query}", response_model=users)
-async def update_user():
-    pass
+@app.put("/users/{user_id}", response_model=UserSchema)
+async def update_user(user_id: int, update_user: UserSchema, db: Session = Depends(get_db)):
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404,  detail="Can not update user")
+
+    for key, value in update_user.dict(exclude_unset=True).items():
+        setattr(user, key, value)
+
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app.host=="0.0.0.0", port=7000)
+    uvicorn.run(app, host=="0.0.0.0", port=7000)

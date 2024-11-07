@@ -7,8 +7,9 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    __tablename__ = ""
-    id = Column(Integer, primary_key=True)
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     ## I need to find out how to record emails ---> that's part of the focus points
     email = Column(String, nullable=False, unique=True)
