@@ -2,3 +2,5 @@
 .venv
 ./alembic
 alembic.ini
+_pycache_
+
